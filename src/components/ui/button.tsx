@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 export interface ButtonProps
-  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "onDrag"> {
+  extends React.ComponentPropsWithoutRef<typeof motion.button> {
   variant?: "default" | "outline" | "ghost" | "destructive" | "success";
   size?: "default" | "sm" | "lg" | "icon";
 }
