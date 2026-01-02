@@ -174,6 +174,61 @@ export function generateStackedAreaData(loans: Loan[]): Array<{
 }
 
 /**
+ * 年単位の積み上げ面グラフ用のデータを生成
+ * 元本と利息を年単位で集計
+ */
+export function generateYearlyStackedAreaData(loans: Loan[]): Array<{
+  year: string;
+  principal: number;
+  interest: number;
+}> {
+  // まず月単位のデータを取得
+  const monthlyData = generateStackedAreaData(loans);
+  
+  // 年単位で集計
+  const yearlyMap = new Map<string, { principal: number; interest: number }>();
+  
+  monthlyData.forEach((monthData) => {
+    // 日付文字列から年を抽出（例: "2025年1月" → "2025"）
+    const dateStr = monthData.date;
+    // "ja-JP"ロケールの場合、"2025年1月"のような形式になる想定
+    // 年を抽出する（最初の4桁の数字を取得）
+    const yearMatch = dateStr.match(/(\d{4})/);
+    if (!yearMatch) {
+      // フォーマットが予期しない場合は、日付オブジェクトから年を取得
+      const date = new Date(monthData.date);
+      if (!isNaN(date.getTime())) {
+        const year = date.getFullYear().toString();
+        const existing = yearlyMap.get(year) || { principal: 0, interest: 0 };
+        yearlyMap.set(year, {
+          principal: existing.principal + monthData.principal,
+          interest: existing.interest + monthData.interest,
+        });
+      }
+      return;
+    }
+    
+    const year = yearMatch[1];
+    const existing = yearlyMap.get(year) || { principal: 0, interest: 0 };
+    yearlyMap.set(year, {
+      principal: existing.principal + monthData.principal,
+      interest: existing.interest + monthData.interest,
+    });
+  });
+  
+  // Mapを配列に変換して、年順にソート
+  const result = Array.from(yearlyMap.entries())
+    .map(([year, values]) => ({
+      year,
+      principal: values.principal,
+      interest: values.interest,
+    }))
+    .sort((a, b) => a.year.localeCompare(b.year));
+  
+  return result;
+}
+
+/**
  * 残高の推移データを生成（グラフ用）- 後方互換性のため残す
  */
 export function generateBalanceProjection(loans: Loan[]): Array<{
