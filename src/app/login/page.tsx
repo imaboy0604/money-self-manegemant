@@ -24,8 +24,25 @@ export default function LoginPage() {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const errorParam = params.get('error');
-      if (errorParam === 'auth_failed') {
-        setError('認証に失敗しました。もう一度お試しください。');
+      if (errorParam) {
+        // エラーメッセージをデコード
+        const decodedError = decodeURIComponent(errorParam);
+        let errorMessage = '認証に失敗しました。もう一度お試しください。';
+        
+        // エラーの種類に応じてメッセージを変更
+        if (decodedError.includes('access_denied')) {
+          errorMessage = 'Googleログインが拒否されました。';
+        } else if (decodedError.includes('session_failed')) {
+          errorMessage = 'セッションの確立に失敗しました。もう一度お試しください。';
+        } else if (decodedError.includes('no_code')) {
+          errorMessage = '認証コードが取得できませんでした。もう一度お試しください。';
+        } else if (decodedError !== 'auth_failed') {
+          errorMessage = decodedError;
+        }
+        
+        setError(errorMessage);
+        // URLからエラーパラメータを削除
+        window.history.replaceState({}, '', '/login');
       }
     }
 
