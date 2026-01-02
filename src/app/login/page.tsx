@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,6 +17,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   useEffect(() => {
     // 環境変数のチェック
@@ -28,75 +29,156 @@ export default function LoginPage() {
         "⚠️ Supabase環境変数が設定されていません。\n" +
         ".env.localファイルにNEXT_PUBLIC_SUPABASE_URLとNEXT_PUBLIC_SUPABASE_ANON_KEYを設定してください。"
       );
+    } else {
+      // 既にログインしている場合はリダイレクト
+      supabase.auth.getUser().then(({ data: { user }, error: userError }) => {
+        if (userError) {
+          console.error("Error getting user:", userError);
+        } else if (user) {
+          router.push("/");
+        }
+      });
     }
-  }, []);
+  }, [router]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     setSuccess(null);
 
+    // 入力値の検証
+    if (!email.trim()) {
+      setError("メールアドレスを入力してください。");
+      setLoading(false);
+      return;
+    }
+
+    if (!password.trim()) {
+      setError("パスワードを入力してください。");
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("パスワードは6文字以上で入力してください。");
+      setLoading(false);
+      return;
+    }
+
+    console.log("Starting auth process...", { isSignUp, email: email.trim() });
+
     try {
       if (isSignUp) {
         // サインアップ
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
+        console.log("Attempting sign up...");
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email: email.trim(),
+          password: password.trim(),
         });
 
-        if (error) throw error;
+        console.log("Sign up response:", { data, error: signUpError });
+
+        if (signUpError) {
+          console.error("Sign up error:", signUpError);
+          throw signUpError;
+        }
 
         if (data.user) {
-          // メール確認が無効な場合、すぐにログインできる
           if (data.session) {
-            router.push("/");
-            router.refresh();
+            // メール確認が無効な場合、すぐにログインできる
+            console.log("Sign up successful, session exists, redirecting...");
+            setIsTransitioning(true);
+            setTimeout(() => {
+              router.push("/");
+              router.refresh();
+            }, 500);
           } else {
             // メール確認が必要な場合
+            console.log("Sign up successful, email confirmation required");
             setSuccess("確認メールを送信しました。メールボックスを確認してください。");
             setEmail("");
             setPassword("");
           }
         } else {
+          console.error("Sign up failed: no user returned");
           setError("サインアップに失敗しました。もう一度お試しください。");
         }
       } else {
         // ログイン
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+        console.log("Attempting sign in...");
+        const { data, error: signInError } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password: password.trim(),
         });
 
-        if (error) throw error;
+        console.log("Sign in response:", { data, error: signInError });
 
-        if (data.user) {
-          // ログイン成功
-          router.push("/");
-          router.refresh();
+        if (signInError) {
+          console.error("Sign in error:", signInError);
+          throw signInError;
+        }
+
+        if (data.user && data.session) {
+          console.log("Sign in successful, redirecting...");
+          setIsTransitioning(true);
+          setTimeout(() => {
+            router.push("/");
+            router.refresh();
+          }, 500);
         } else {
-          setError("ログインに失敗しました。もう一度お試しください。");
+          console.error("Sign in failed: no user or session returned");
+          setError("ログインに失敗しました。メールアドレスとパスワードを確認してください。");
         }
       }
     } catch (error: any) {
       console.error("Auth error:", error);
-      setError(error.message || "エラーが発生しました");
+      const errorMessage = error?.message || "エラーが発生しました";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main
-      className="min-h-screen flex items-center justify-center transition-colors duration-300"
-      style={{ backgroundColor: "var(--background)" }}
-    >
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md px-4"
+    <AnimatePresence mode="wait">
+      <motion.main
+        key="login-page"
+        initial={{ opacity: 1, scale: 1 }}
+        animate={
+          isTransitioning
+            ? {
+                opacity: 0,
+                scale: 0.95,
+                y: -30,
+              }
+            : {
+                opacity: 1,
+                scale: 1,
+                y: 0,
+              }
+        }
+        transition={{
+          duration: 0.5,
+          ease: [0.22, 1, 0.36, 1],
+        }}
+        className="min-h-screen flex items-center justify-center transition-colors duration-300"
+        style={{ backgroundColor: "var(--background)" }}
       >
+        <motion.div
+          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+          animate={{
+            opacity: isTransitioning ? 0 : 1,
+            y: isTransitioning ? -30 : 0,
+            scale: isTransitioning ? 0.8 : 1,
+            rotate: isTransitioning ? -2 : 0,
+          }}
+          transition={{
+            duration: 0.5,
+            ease: [0.22, 1, 0.36, 1],
+          }}
+          className="w-full max-w-md px-4"
+        >
         <Card className="neumorphic">
           <CardHeader>
             <CardTitle className="text-2xl text-center" style={{ color: "var(--text-primary)" }}>
@@ -107,7 +189,7 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
                 <div
-                  className="p-3 rounded-lg text-sm"
+                  className="p-3 rounded-lg text-sm whitespace-pre-line"
                   style={{
                     backgroundColor: "rgba(239, 68, 68, 0.1)",
                     color: "#ef4444",
@@ -138,6 +220,7 @@ export default function LoginPage() {
                   placeholder="example@email.com"
                   required
                   disabled={loading}
+                  autoComplete="email"
                 />
               </div>
 
@@ -152,6 +235,7 @@ export default function LoginPage() {
                   required
                   disabled={loading}
                   minLength={6}
+                  autoComplete={isSignUp ? "new-password" : "current-password"}
                 />
                 {isSignUp && (
                   <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
@@ -188,8 +272,8 @@ export default function LoginPage() {
             </form>
           </CardContent>
         </Card>
-      </motion.div>
-    </main>
+        </motion.div>
+      </motion.main>
+    </AnimatePresence>
   );
 }
-

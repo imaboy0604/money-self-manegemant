@@ -11,10 +11,17 @@ if (typeof window !== "undefined" && (!supabaseUrl || !supabaseAnonKey)) {
   );
 }
 
-// 環境変数が設定されていない場合でもクライアントを作成（エラーを防ぐため）
-// 実際の使用時にはエラーハンドリングが必要
+// クライアントコンポーネント用のSupabaseクライアント
+// Next.js 14のApp Routerでも動作するように設定
 export const supabase = createClient(
   supabaseUrl || "https://placeholder.supabase.co",
-  supabaseAnonKey || "placeholder-key"
+  supabaseAnonKey || "placeholder-key",
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      flowType: "pkce",
+    },
+  }
 );
-
