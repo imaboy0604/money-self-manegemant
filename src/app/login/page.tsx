@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     // 環境変数のチェック
@@ -34,6 +35,7 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccess(null);
 
     try {
       if (isSignUp) {
@@ -46,9 +48,18 @@ export default function LoginPage() {
         if (error) throw error;
 
         if (data.user) {
-          // サインアップ成功
-          router.push("/");
-          router.refresh();
+          // メール確認が無効な場合、すぐにログインできる
+          if (data.session) {
+            router.push("/");
+            router.refresh();
+          } else {
+            // メール確認が必要な場合
+            setSuccess("確認メールを送信しました。メールボックスを確認してください。");
+            setEmail("");
+            setPassword("");
+          }
+        } else {
+          setError("サインアップに失敗しました。もう一度お試しください。");
         }
       } else {
         // ログイン
@@ -63,9 +74,12 @@ export default function LoginPage() {
           // ログイン成功
           router.push("/");
           router.refresh();
+        } else {
+          setError("ログインに失敗しました。もう一度お試しください。");
         }
       }
     } catch (error: any) {
+      console.error("Auth error:", error);
       setError(error.message || "エラーが発生しました");
     } finally {
       setLoading(false);
@@ -100,6 +114,17 @@ export default function LoginPage() {
                   }}
                 >
                   {error}
+                </div>
+              )}
+              {success && (
+                <div
+                  className="p-3 rounded-lg text-sm"
+                  style={{
+                    backgroundColor: "rgba(34, 197, 94, 0.1)",
+                    color: "#22c55e",
+                  }}
+                >
+                  {success}
                 </div>
               )}
 
@@ -149,6 +174,7 @@ export default function LoginPage() {
                   onClick={() => {
                     setIsSignUp(!isSignUp);
                     setError(null);
+                    setSuccess(null);
                   }}
                   className="text-sm underline"
                   style={{ color: "var(--text-secondary)" }}
