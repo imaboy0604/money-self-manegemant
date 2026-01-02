@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #e8ecf0;
+  --foreground: #1a1a2e;
+  --surface: #f5f7fa;
+  --surface-dark: #dde1e6;
+  --primary: #00d4ff;
+  --primary-dark: #00b8e6;
+  --secondary: #8b5cf6;
+  --text-primary: #1a1a2e;
+  --text-secondary: #4a5568;
+  --text-muted: #718096;
+}
+
+.dark {
+  --background: #2a2d35;
+  --foreground: #e2e8f0;
+  --surface: #323640;
+  --surface-dark: #25282e;
+  --primary: #00d4ff;
+  --primary-dark: #00b8e6;
+  --secondary: #a78bfa;
+  --text-primary: #f7fafc;
+  --text-secondary: #e2e8f0;
+  --text-muted: #cbd5e0;
+}
+
+body {
+  color: var(--text-primary);
+  background: var(--background);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ニューモーフィズム効果 - 浮き上がる */
+.neumorphic {
+  background: var(--surface);
+  border-radius: 24px;
+  box-shadow: 
+    8px 8px 16px rgba(0, 0, 0, 0.1),
+    -8px -8px 16px rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .neumorphic {
+  background: var(--surface);
+  box-shadow: 
+    8px 8px 16px rgba(0, 0, 0, 0.3),
+    -8px -8px 16px rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ニューモーフィズム効果 - 沈み込む */
+.neumorphic-inset {
+  background: var(--surface);
+  border-radius: 24px;
+  box-shadow: 
+    inset 4px 4px 8px rgba(0, 0, 0, 0.1),
+    inset -4px -4px 8px rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .neumorphic-inset {
+  background: var(--surface);
+  box-shadow: 
+    inset 4px 4px 8px rgba(0, 0, 0, 0.3),
+    inset -4px -4px 8px rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ニューモーフィズムボタン - 押し込まれた感じ */
+.neumorphic-pressed {
+  background: var(--surface);
+  border-radius: 24px;
+  box-shadow: 
+    inset 4px 4px 8px rgba(0, 0, 0, 0.15),
+    inset -4px -4px 8px rgba(255, 255, 255, 0.6);
+}
+
+.dark .neumorphic-pressed {
+  box-shadow: 
+    inset 4px 4px 8px rgba(0, 0, 0, 0.4),
+    inset -4px -4px 8px rgba(255, 255, 255, 0.03);
+}
+
+/* アクティブな要素のグロー効果 */
+.neumorphic-glow {
+  box-shadow: 
+    8px 8px 16px rgba(0, 0, 0, 0.1),
+    -8px -8px 16px rgba(255, 255, 255, 0.8),
+    0 0 20px rgba(0, 212, 255, 0.3);
+}
+
+.dark .neumorphic-glow {
+  box-shadow: 
+    8px 8px 16px rgba(0, 0, 0, 0.3),
+    -8px -8px 16px rgba(255, 255, 255, 0.05),
+    0 0 20px rgba(0, 212, 255, 0.4);
+}
+
