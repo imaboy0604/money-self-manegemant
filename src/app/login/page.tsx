@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,6 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,10 +20,13 @@ export default function LoginPage() {
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   useEffect(() => {
-    // URLパラメータからエラーを取得
-    const errorParam = searchParams.get('error');
-    if (errorParam === 'auth_failed') {
-      setError('認証に失敗しました。もう一度お試しください。');
+    // URLパラメータからエラーを取得（クライアントサイドで取得）
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const errorParam = params.get('error');
+      if (errorParam === 'auth_failed') {
+        setError('認証に失敗しました。もう一度お試しください。');
+      }
     }
 
     // 既にログインしている場合はリダイレクト
@@ -44,7 +46,7 @@ export default function LoginPage() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [router, searchParams]);
+  }, [router]);
 
   const handleEmailAuth = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
