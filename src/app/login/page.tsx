@@ -85,18 +85,23 @@ export default function LoginPage() {
         }
 
         if (data.user) {
+          // セッションが存在する場合はすぐにログイン
           if (data.session) {
-            // メール確認が無効な場合、すぐにログインできる
             console.log("Sign up successful, session exists, redirecting...");
             setIsTransitioning(true);
             setTimeout(() => {
-              router.push("/");
-              router.refresh();
-            }, 500);
+              window.location.href = "/";
+            }, 400);
           } else {
-            // メール確認が必要な場合
-            console.log("Sign up successful, email confirmation required");
-            setSuccess("確認メールを送信しました。メールボックスを確認してください。");
+            // セッションが存在しない場合（メール確認が有効な場合）
+            // 注意: Supabaseダッシュボードでメール確認を無効にすることで、
+            // 新規登録時に自動的にログインできるようになります
+            console.log("Sign up successful, email confirmation may be required");
+            setSuccess(
+              "アカウントが作成されました。\n" +
+              "メール確認が有効な場合は、確認メールを確認してください。\n" +
+              "メール確認を無効にしたい場合は、Supabaseダッシュボードの設定を変更してください。"
+            );
             setEmail("");
             setPassword("");
           }
@@ -123,9 +128,8 @@ export default function LoginPage() {
           console.log("Sign in successful, redirecting...");
           setIsTransitioning(true);
           setTimeout(() => {
-            router.push("/");
-            router.refresh();
-          }, 500);
+            window.location.href = "/";
+          }, 400);
         } else {
           console.error("Sign in failed: no user or session returned");
           setError("ログインに失敗しました。メールアドレスとパスワードを確認してください。");
