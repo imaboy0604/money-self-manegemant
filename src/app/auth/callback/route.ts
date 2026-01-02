@@ -29,7 +29,25 @@ export async function GET(request: NextRequest) {
       }
 
       if (data.session) {
-        return NextResponse.redirect(`${origin}/`);
+        // セッションが確立されたことを確認
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          console.error('User not found after session exchange');
+          return NextResponse.redirect(`${origin}/login?error=user_not_found`);
+        }
+
+        // リダイレクト先を作成（キャッシュバスティングパラメータを追加）
+        const redirectUrl = new URL('/', origin);
+        redirectUrl.searchParams.set('auth', 'success');
+        
+        // リダイレクトレスポンスを作成（キャッシュヘッダーを設定）
+        const response = NextResponse.redirect(redirectUrl);
+        response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        response.headers.set('Pragma', 'no-cache');
+        response.headers.set('Expires', '0');
+        
+        return response;
       } else {
         console.error('No session returned from exchangeCodeForSession');
         return NextResponse.redirect(`${origin}/login?error=session_failed`);

@@ -46,17 +46,30 @@ export default function LoginPage() {
       }
     }
 
-    // 既にログインしている場合はリダイレクト
-    supabase.auth.getSession().then(({ data: { session }, error: sessionError }) => {
-      if (session && !sessionError) {
-        router.replace("/");
+    // 既にログインしている場合はリダイレクト（より確実にチェック）
+    const checkAuth = async () => {
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        if ((session || user) && !sessionError && !userError) {
+          // 少し待ってからリダイレクト（セッションが確実に確立されるまで）
+          setTimeout(() => {
+            window.location.href = "/";
+          }, 100);
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
       }
-    });
+    };
+
+    checkAuth();
 
     // 認証状態の変更を監視
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        router.replace("/");
+        // フルページリロードで確実にセッションを反映
+        window.location.href = "/";
       }
     });
 

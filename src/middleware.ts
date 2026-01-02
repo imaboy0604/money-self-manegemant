@@ -64,18 +64,30 @@ export async function middleware(req: NextRequest) {
       },
     });
 
+    // セッションとユーザー情報の両方を取得（より確実に）
     const {
       data: { user },
+      error: userError,
     } = await supabase.auth.getUser();
 
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    // ログインページとauth/callbackを除外
+    const isLoginPage = req.nextUrl.pathname.startsWith("/login");
+    const isAuthCallback = req.nextUrl.pathname.startsWith("/auth/callback");
+
     // ログインページ以外で未ログインの場合はログインページにリダイレクト
-    if (!user && !req.nextUrl.pathname.startsWith("/login")) {
+    if (!user && !session && !isLoginPage && !isAuthCallback) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
 
     // ログイン済みでログインページにアクセスした場合はトップページにリダイレクト
-    if (user && req.nextUrl.pathname.startsWith("/login")) {
-      return NextResponse.redirect(new URL("/", req.url));
+    if ((user || session) && isLoginPage) {
+      const redirectUrl = new URL("/", req.url);
+      redirectUrl.searchParams.set("redirected", "true");
+      return NextResponse.redirect(redirectUrl);
     }
   } catch (error) {
     console.error("Middleware error:", error);

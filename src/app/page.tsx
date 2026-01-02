@@ -36,13 +36,25 @@ export default function Home() {
           return;
         }
 
+        // セッションとユーザーの両方を確認（より確実に）
         const {
           data: { user },
+          error: userError,
         } = await supabase.auth.getUser();
 
-        if (!user) {
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
+
+        if (!user && !session) {
           router.push("/login");
           return;
+        }
+
+        // エラーがある場合はログに記録
+        if (userError || sessionError) {
+          console.warn("Auth check errors:", { userError, sessionError });
         }
 
         // データを取得
