@@ -36,6 +36,13 @@ npm install
 2. プロジェクトの「Settings」→「API」から以下を取得:
    - Project URL
    - anon/public key
+3. **認証設定（重要）**:
+   - 「Authentication」→「URL Configuration」に移動
+   - **Site URL**: 本番環境のURL（例: `https://your-app.vercel.app`）を設定
+   - **Redirect URLs**: 以下を追加:
+     - `https://your-app.vercel.app/login` （本番環境用）
+     - `http://localhost:3000/login` （開発環境用、オプション）
+   - 設定を保存
 
 ### 3. 環境変数の設定
 

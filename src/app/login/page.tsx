@@ -30,6 +30,57 @@ export default function LoginPage() {
         ".env.localファイルにNEXT_PUBLIC_SUPABASE_URLとNEXT_PUBLIC_SUPABASE_ANON_KEYを設定してください。"
       );
     } else {
+      // URLパラメータからcodeを取得（メール確認後のリダイレクト）
+      const handleAuthCallback = async () => {
+        // ハッシュフラグメントからパラメータを取得
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+        const type = hashParams.get('type');
+        
+        // クエリパラメータからも取得（フォールバック）
+        const searchParams = new URLSearchParams(window.location.search);
+        const code = searchParams.get('code');
+
+        // メール確認後のリダイレクト（type=signup または type=email）
+        if (accessToken && refreshToken && (type === 'signup' || type === 'email' || type === 'recovery')) {
+          try {
+            const { data, error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+
+            if (error) {
+              console.error('Session error:', error);
+              setError('認証に失敗しました。もう一度お試しください。');
+            } else if (data.session) {
+              // セッションが確立されたらメインページにリダイレクト
+              // URLからハッシュフラグメントを削除
+              window.history.replaceState({}, '', '/login');
+              window.location.href = "/";
+            }
+          } catch (err) {
+            console.error('Auth callback error:', err);
+          }
+        } else if (code) {
+          // codeパラメータがある場合（PKCE flow）
+          try {
+            const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+            if (error) {
+              console.error('Code exchange error:', error);
+              setError('認証に失敗しました。もう一度お試しください。');
+            } else if (data.session) {
+              window.history.replaceState({}, '', '/login');
+              window.location.href = "/";
+            }
+          } catch (err) {
+            console.error('Code exchange error:', err);
+          }
+        }
+      };
+
+      handleAuthCallback();
+
       // 既にログインしている場合はリダイレクト
       supabase.auth.getUser().then(({ data: { user }, error: userError }) => {
         if (userError) {
@@ -72,9 +123,18 @@ export default function LoginPage() {
       if (isSignUp) {
         // サインアップ
         console.log("Attempting sign up...");
+        
+        // リダイレクトURLを設定（本番環境または開発環境に応じて）
+        const redirectTo = typeof window !== 'undefined' 
+          ? `${window.location.origin}/login`
+          : 'https://your-vercel-app.vercel.app/login';
+        
         const { data, error: signUpError } = await supabase.auth.signUp({
           email: email.trim(),
           password: password.trim(),
+          options: {
+            emailRedirectTo: redirectTo,
+          },
         });
 
         console.log("Sign up response:", { data, error: signUpError });
@@ -121,6 +181,10 @@ export default function LoginPage() {
 
         if (signInError) {
           console.error("Sign in error:", signInError);
+          // メール確認が必要な場合のエラーメッセージ
+          if (signInError.message.includes('email not confirmed') || signInError.message.includes('Email not confirmed')) {
+            throw new Error('メールアドレスの確認が完了していません。確認メールを確認してください。');
+          }
           throw signInError;
         }
 
