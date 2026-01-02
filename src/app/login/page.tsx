@@ -49,14 +49,22 @@ export default function LoginPage() {
     // 既にログインしている場合はリダイレクト（より確実にチェック）
     const checkAuth = async () => {
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        
-        if ((session || user) && !sessionError && !userError) {
-          // 少し待ってからリダイレクト（セッションが確実に確立されるまで）
-          setTimeout(() => {
+        // 複数回試行してセッションを確認
+        for (let i = 0; i < 3; i++) {
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+          const { data: { user }, error: userError } = await supabase.auth.getUser();
+          
+          if ((session || user) && !sessionError && !userError) {
+            console.log("User already authenticated, redirecting...");
+            // フルページリロードで確実にセッションを反映
             window.location.href = "/";
-          }, 100);
+            return;
+          }
+          
+          // セッションが見つからない場合、少し待って再試行
+          if (i < 2) {
+            await new Promise(resolve => setTimeout(resolve, 200));
+          }
         }
       } catch (error) {
         console.error("Auth check error:", error);
@@ -77,6 +85,19 @@ export default function LoginPage() {
       subscription.unsubscribe();
     };
   }, [router]);
+
+  // セッションが確立されるまで待機する関数
+  const waitForSession = async (maxAttempts = 10, delay = 200): Promise<boolean> => {
+    for (let i = 0; i < maxAttempts; i++) {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (session && !error) {
+        console.log(`Session established after ${i + 1} attempts`);
+        return true;
+      }
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+    return false;
+  };
 
   const handleEmailAuth = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -121,28 +142,38 @@ export default function LoginPage() {
 
         if (data.user) {
           if (data.session) {
-            // セッションが存在する場合はすぐにログイン
-            setIsTransitioning(true);
-            setTimeout(() => {
+            // セッションが存在する場合、確立を確認してからリダイレクト
+            console.log("Sign up successful, session exists");
+            const sessionEstablished = await waitForSession(5, 300);
+            if (sessionEstablished) {
+              setIsTransitioning(true);
+              // フルページリロードで確実にセッションを反映
               window.location.href = "/";
-            }, 400);
+            } else {
+              setError("セッションの確立に時間がかかっています。ページをリロードしてください。");
+              setLoading(false);
+            }
           } else {
             // メール確認が必要な場合
             setSuccess("確認メールを送信しました。メールボックスを確認してください。");
             setEmail("");
             setPassword("");
+            setLoading(false);
           }
         } else {
           setError("サインアップに失敗しました。もう一度お試しください。");
+          setLoading(false);
         }
       } else {
         // ログイン
+        console.log("Attempting sign in...");
         const { data, error: signInError } = await supabase.auth.signInWithPassword({
           email: email.trim(),
           password: password.trim(),
         });
 
         if (signInError) {
+          console.error("Sign in error:", signInError);
           if (signInError.message.includes('email not confirmed') || signInError.message.includes('Email not confirmed')) {
             throw new Error('メールアドレスの確認が完了していません。確認メールを確認してください。');
           }
@@ -150,18 +181,28 @@ export default function LoginPage() {
         }
 
         if (data.user && data.session) {
-          setIsTransitioning(true);
-          setTimeout(() => {
+          console.log("Sign in successful, session exists");
+          // セッションが確立されるまで待機
+          const sessionEstablished = await waitForSession(5, 300);
+          if (sessionEstablished) {
+            setIsTransitioning(true);
+            // フルページリロードで確実にセッションを反映
             window.location.href = "/";
-          }, 400);
+          } else {
+            // セッションが確立されない場合でも、セッションが存在する場合はリダイレクトを試みる
+            console.warn("Session wait timeout, but session exists, attempting redirect");
+            setIsTransitioning(true);
+            window.location.href = "/";
+          }
         } else {
+          console.error("Sign in failed: no user or session", { user: data.user, session: data.session });
           setError("ログインに失敗しました。メールアドレスとパスワードを確認してください。");
+          setLoading(false);
         }
       }
     } catch (error: any) {
       console.error("Auth error:", error);
       setError(error?.message || "エラーが発生しました");
-    } finally {
       setLoading(false);
     }
   };

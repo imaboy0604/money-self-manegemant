@@ -77,6 +77,17 @@ export async function middleware(req: NextRequest) {
     // ログインページとauth/callbackを除外
     const isLoginPage = req.nextUrl.pathname.startsWith("/login");
     const isAuthCallback = req.nextUrl.pathname.startsWith("/auth/callback");
+    const isRoot = req.nextUrl.pathname === "/";
+
+    // デバッグログ（本番環境では削除可能）
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Middleware]', {
+        pathname: req.nextUrl.pathname,
+        hasUser: !!user,
+        hasSession: !!session,
+        userError: userError?.message,
+      });
+    }
 
     // ログインページ以外で未ログインの場合はログインページにリダイレクト
     if (!user && !session && !isLoginPage && !isAuthCallback) {
@@ -87,7 +98,10 @@ export async function middleware(req: NextRequest) {
     if ((user || session) && isLoginPage) {
       const redirectUrl = new URL("/", req.url);
       redirectUrl.searchParams.set("redirected", "true");
-      return NextResponse.redirect(redirectUrl);
+      // キャッシュヘッダーを設定
+      const redirectResponse = NextResponse.redirect(redirectUrl);
+      redirectResponse.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+      return redirectResponse;
     }
   } catch (error) {
     console.error("Middleware error:", error);
