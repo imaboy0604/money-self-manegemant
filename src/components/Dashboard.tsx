@@ -224,10 +224,10 @@ export function Dashboard({ loans }: DashboardProps) {
                       tickFormatter={(value) => `¥${(value / 10000).toFixed(0)}万`}
                     />
                     <Tooltip
-                      formatter={(value: number | undefined, name: string) => {
-                        if (value === undefined) return ["-", ""];
+                      formatter={(value: any, name: any) => {
+                        if (!value) return ["-", ""];
                         const label = name === "principal" ? "元本" : name === "interest" ? "利息" : "合計";
-                        return [`¥${value.toLocaleString()}`, label];
+                        return [`¥${Number(value).toLocaleString()}`, label];
                       }}
                       labelStyle={{ color: "var(--text-primary)" }}
                       contentStyle={{
@@ -314,10 +314,10 @@ export function Dashboard({ loans }: DashboardProps) {
                       tickFormatter={(value) => `¥${(value / 10000).toFixed(0)}万`}
                     />
                     <Tooltip
-                      formatter={(value: number | undefined, name: string) => {
-                        if (value === undefined) return ["-", ""];
+                      formatter={(value: any, name: any) => {
+                        if (!value) return ["-", ""];
                         const label = name === "principal" ? "元本" : name === "interest" ? "利息" : "合計";
-                        return [`¥${value.toLocaleString()}`, label];
+                        return [`¥${Number(value).toLocaleString()}`, label];
                       }}
                       labelStyle={{ color: "var(--text-primary)" }}
                       contentStyle={{
