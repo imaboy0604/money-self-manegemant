@@ -46,10 +46,9 @@
    ```
 8. **承認済みのリダイレクトURI**: 以下を追加
    ```
-   https://your-project-ref.supabase.co/auth/v1/callback
+   https://vwrmmrfszatlssgiuvpt.supabase.co/auth/v1/callback
    ```
-   - `your-project-ref`は、Supabaseダッシュボードの「Settings」→「API」→「Project URL」から確認できます
-   - 例: `https://abcdefghijklmnop.supabase.co/auth/v1/callback`
+   - これはSupabaseプロジェクトのURLです
 9. 「作成」をクリック
 10. **クライアントID**と**クライアントシークレット**をコピー（後で使用します）
 
@@ -125,7 +124,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 **解決方法**:
 1. Google Cloud Consoleで、承認済みのリダイレクトURIが正しく設定されているか確認
-   - `https://your-project-ref.supabase.co/auth/v1/callback`
+   - `https://vwrmmrfszatlssgiuvpt.supabase.co/auth/v1/callback`
 2. Supabaseダッシュボードで、Googleプロバイダーの設定を確認
 3. クライアントIDとクライアントシークレットが正しく入力されているか確認
 
